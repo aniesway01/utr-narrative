@@ -1,0 +1,373 @@
+{
+  "characters": {
+    "Grey": [
+      {
+        "path": "images/characters/Grey_sirgreynew3d.webp",
+        "source": "sirgreynew3d",
+        "anim": "SirGreySmileStop"
+      },
+      {
+        "path": "images/characters/Grey_femgrey3ddisplay.webp",
+        "source": "femgrey3ddisplay",
+        "anim": "sleepingprincess"
+      },
+      {
+        "path": "images/characters/Grey_3dfemgreydisplay.webp",
+        "source": "3dfemgreydisplay",
+        "anim": "kiss1"
+      },
+      {
+        "path": "images/characters/Grey_bustyfemgrey.webp",
+        "source": "bustyfemgrey",
+        "anim": "PoolSleepOntheCheeseSleepAnother"
+      },
+      {
+        "path": "images/characters/Grey_cloakmermaidgrey.webp",
+        "source": "cloakmermaidgrey",
+        "anim": "Female6Heavy"
+      },
+      {
+        "path": "images/characters/Grey_3dcombatmalegrey.webp",
+        "source": "3dcombatmalegrey",
+        "anim": "Attack1NoAxe"
+      },
+      {
+        "path": "images/characters/Grey_confessionwithsirgrey.webp",
+        "source": "confessionwithsirgrey",
+        "anim": "stage4"
+      }
+    ],
+    "Adam": [
+      {
+        "path": "images/characters/Adam_corruptedadam3ddisplay.webp",
+        "source": "corruptedadam3ddisplay",
+        "anim": "Claw"
+      },
+      {
+        "path": "images/characters/Adam_adamfutasex.webp",
+        "source": "adamfutasex",
+        "anim": "YLFuta5"
+      },
+      {
+        "path": "images/characters/Adam_adamcorrupttf.webp",
+        "source": "adamcorrupttf",
+        "anim": "stage8"
+      }
+    ],
+    "Catherine": [
+      {
+        "path": "images/characters/Catherine_catherinenew3d.webp",
+        "source": "catherinenew3d",
+        "anim": "SleepOpenEye"
+      },
+      {
+        "path": "images/characters/Catherine_catherinescenewithpc.webp",
+        "source": "catherinescenewithpc",
+        "anim": "InspectionCor4Stage2"
+      },
+      {
+        "path": "images/characters/Catherine_catherinecorruption3dfrom.webp",
+        "source": "catherinecorruption3dfrom",
+        "anim": "SitGazeTotheSide"
+      }
+    ],
+    "Veronica": [
+      {
+        "path": "images/characters/Veronica_veronicaquest.webp",
+        "source": "veronicaquest",
+        "anim": "Death4"
+      },
+      {
+        "path": "images/characters/Veronica_youngveronica3d.webp",
+        "source": "youngveronica3d",
+        "anim": "MadLaugh"
+      },
+      {
+        "path": "images/characters/Veronica_veronicasex3d.webp",
+        "source": "veronicasex3d",
+        "anim": "male7"
+      },
+      {
+        "path": "images/characters/Veronica_veronicacorruptiontf.webp",
+        "source": "veronicacorruptiontf",
+        "anim": "TF6"
+      }
+    ],
+    "Fae": [
+      {
+        "path": "images/characters/Fae_3dfaeformghostsexscene.webp",
+        "source": "3dfaeformghostsexscene",
+        "anim": "Stage24"
+      },
+      {
+        "path": "images/characters/Fae_faesex.webp",
+        "source": "faesex",
+        "anim": "female6Stage7"
+      },
+      {
+        "path": "images/characters/Fae_faetf.webp",
+        "source": "faetf",
+        "anim": "AdultFaeCryCloseUp"
+      },
+      {
+        "path": "images/characters/Fae_corruptedfae.webp",
+        "source": "corruptedfae",
+        "anim": "Coolpose"
+      }
+    ],
+    "Denethor": [
+      {
+        "path": "images/characters/Denethor_denethor3dimage.webp",
+        "source": "denethor3dimage",
+        "anim": "Default"
+      },
+      {
+        "path": "images/characters/Denethor_denethorsexsceneshopver.webp",
+        "source": "denethorsexsceneshopver",
+        "anim": "Female6Stage4"
+      },
+      {
+        "path": "images/characters/Denethor_denethortfcorruption.webp",
+        "source": "denethortfcorruption",
+        "anim": "TF17"
+      }
+    ],
+    "Mercer": [
+      {
+        "path": "images/characters/Mercer_mercersex.webp",
+        "source": "mercersex",
+        "anim": "female4Stage6"
+      },
+      {
+        "path": "images/characters/Mercer_mercertfscene.webp",
+        "source": "mercertfscene",
+        "anim": "TF14"
+      },
+      {
+        "path": "images/characters/Mercer_halfmalemercer.webp",
+        "source": "halfmalemercer",
+        "anim": "ImNotWell"
+      },
+      {
+        "path": "images/characters/Mercer_femmercersexscene.webp",
+        "source": "femmercersexscene",
+        "anim": "female3stage10"
+      }
+    ],
+    "Thomas": [
+      {
+        "path": "images/characters/Thomas_thomas3ddefeatevent.webp",
+        "source": "thomas3ddefeatevent",
+        "anim": "BadEnd"
+      },
+      {
+        "path": "images/characters/Thomas_thomas3ddisplay.webp",
+        "source": "thomas3ddisplay",
+        "anim": "Birth4"
+      }
+    ],
+    "Uru": [
+      {
+        "path": "images/characters/Uru_femaleuru.webp",
+        "source": "femaleuru",
+        "anim": "SideCombatKick"
+      },
+      {
+        "path": "images/characters/Uru_femaleurumainsex.webp",
+        "source": "femaleurumainsex",
+        "anim": "Female5Stage12"
+      },
+      {
+        "path": "images/characters/Uru_femaleurutf.webp",
+        "source": "femaleurutf",
+        "anim": "BeforeLove3"
+      }
+    ],
+    "Isabella": [
+      {
+        "path": "images/characters/Isabella_isabellaxplayersexscene.webp",
+        "source": "isabellaxplayersexscene",
+        "anim": "Default"
+      },
+      {
+        "path": "images/characters/Isabella_beastisabellasexscene.webp",
+        "source": "beastisabellasexscene",
+        "anim": "Male1Stage5"
+      }
+    ],
+    "Madeline": [
+      {
+        "path": "images/characters/Madeline_madelinenpcdisplay.webp",
+        "source": "madelinenpcdisplay",
+        "anim": "serving"
+      },
+      {
+        "path": "images/characters/Madeline_madelinecorruptiontf.webp",
+        "source": "madelinecorruptiontf",
+        "anim": "Sex4"
+      },
+      {
+        "path": "images/characters/Madeline_corruptedmadelinedisplay.webp",
+        "source": "corruptedmadelinedisplay",
+        "anim": "liedown"
+      }
+    ],
+    "Cecillia": [
+      {
+        "path": "images/characters/Cecillia_cecilla.webp",
+        "source": "cecilla",
+        "anim": "MindMerge3"
+      },
+      {
+        "path": "images/characters/Cecillia_cecilliasexscene3d.webp",
+        "source": "cecilliasexscene3d",
+        "anim": "Sex9"
+      },
+      {
+        "path": "images/characters/Cecillia_corrutedcecillia.webp",
+        "source": "corrutedcecillia",
+        "anim": "ChokeMale"
+      }
+    ],
+    "Anastasia": [
+      {
+        "path": "images/characters/Anastasia_anastasia.webp",
+        "source": "anastasia",
+        "anim": "FutaRubCockReading"
+      },
+      {
+        "path": "images/characters/Anastasia_anastasiastory.webp",
+        "source": "anastasiastory",
+        "anim": "TG7"
+      },
+      {
+        "path": "images/characters/Anastasia_corruptedanastasia.webp",
+        "source": "corruptedanastasia",
+        "anim": "NakedCockOutSit"
+      }
+    ],
+    "Manfred": [
+      {
+        "path": "images/characters/Manfred_malemanfred.webp",
+        "source": "malemanfred",
+        "anim": "Rage1"
+      },
+      {
+        "path": "images/characters/Manfred_beastmanfred.webp",
+        "source": "beastmanfred",
+        "anim": "GaspHandToTheSide"
+      },
+      {
+        "path": "images/characters/Manfred_beastmanfredsexscene.webp",
+        "source": "beastmanfredsexscene",
+        "anim": "Male1Stage2"
+      }
+    ],
+    "Medea": [
+      {
+        "path": "images/characters/Medea_medea.webp",
+        "source": "medea",
+        "anim": "ArmoredGroundBound1"
+      },
+      {
+        "path": "images/characters/Medea_medeabook.webp",
+        "source": "medeabook",
+        "anim": "Page1"
+      },
+      {
+        "path": "images/characters/Medea_medeacorrupted.webp",
+        "source": "medeacorrupted",
+        "anim": "LieDown"
+      }
+    ],
+    "Sailor": [
+      {
+        "path": "images/characters/Sailor_sailor.webp",
+        "source": "sailor",
+        "anim": "MaleFeelPoseCloseEye"
+      }
+    ],
+    "EvilMage": [
+      {
+        "path": "images/characters/EvilMage_evilmagefaeformsex.webp",
+        "source": "evilmagefaeformsex",
+        "anim": "stage21"
+      }
+    ],
+    "ShadowSpawn": [
+      {
+        "path": "images/characters/ShadowSpawn_shadowspawncaptureandvision.webp",
+        "source": "shadowspawncaptureandvision",
+        "anim": "female6capture4"
+      },
+      {
+        "path": "images/characters/ShadowSpawn_shadowspawnsprite.webp",
+        "source": "shadowspawnsprite",
+        "anim": "Attack2"
+      }
+    ],
+    "FemaleAgent": [
+      {
+        "path": "images/characters/FemaleAgent_femaleadventurer3ddisplay.webp",
+        "source": "femaleadventurer3ddisplay",
+        "anim": "stage10"
+      }
+    ],
+    "TutorialBoss": [
+      {
+        "path": "images/characters/TutorialBoss_tutorialboss3ddisplay.webp",
+        "source": "tutorialboss3ddisplay",
+        "anim": "BreastSide"
+      }
+    ],
+    "Player": [
+      {
+        "path": "images/characters/Player_player3ddisplay.webp",
+        "source": "player3ddisplay",
+        "anim": "Cor4Wait2"
+      },
+      {
+        "path": "images/characters/Player_corruptedplayer3ddisplay.webp",
+        "source": "corruptedplayer3ddisplay",
+        "anim": "OutfitMountRubpussy"
+      },
+      {
+        "path": "images/characters/Player_playerbeastbrideform.webp",
+        "source": "playerbeastbrideform",
+        "anim": "Cor6Angry"
+      },
+      {
+        "path": "images/characters/Player_playerfaefusion.webp",
+        "source": "playerfaefusion",
+        "anim": "BreastCover"
+      },
+      {
+        "path": "images/characters/Player_playergodform.webp",
+        "source": "playergodform",
+        "anim": "SmileOpenArm"
+      }
+    ]
+  },
+  "portraits": {
+    "adam": "images/portraits/adam.webp",
+    "altrius": "images/portraits/altrius.webp",
+    "catherine": "images/portraits/catherine.webp",
+    "cecillia": "images/portraits/cecillia.webp",
+    "denethor": "images/portraits/denethor.webp",
+    "fae": "images/portraits/fae.webp",
+    "grey": "images/portraits/grey.webp",
+    "mercer": "images/portraits/mercer.webp",
+    "veronica": "images/portraits/veronica.webp"
+  },
+  "scenes": {
+    "introdisplay": "images/scenes/introdisplay.webp",
+    "3dscene": "images/scenes/3dscene.webp",
+    "castledisplayoptimized": "images/scenes/castledisplayoptimized.webp",
+    "labyrinth3dscene": "images/scenes/labyrinth3dscene.webp",
+    "labyrinthfloor2display": "images/scenes/labyrinthfloor2display.webp",
+    "brothelsexscene": "images/scenes/brothelsexscene.webp",
+    "fullbodypcdisplay": "images/scenes/fullbodypcdisplay.webp",
+    "tranformpicdisplay": "images/scenes/tranformpicdisplay.webp",
+    "pcsleep3ddisplay": "images/scenes/pcsleep3ddisplay.webp"
+  }
+}

@@ -161,7 +161,18 @@ input[type="range"] {
   border-radius: 8px;
   border-left: 4px solid var(--accent);
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   user-select: none;
+}
+.scene-header-text { flex: 1; min-width: 0; }
+.scene-portrait {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+  flex-shrink: 0;
 }
 .scene-header h3 { font-size: 16px; margin-bottom: 2px; }
 .scene-header .meta { font-size: 12px; color: var(--text2); }
@@ -338,6 +349,7 @@ input[type="range"] {
 <script>
 // === Global State ===
 let DATA = null;
+let SPRITES = null;
 let stateValues = {};
 let activeChar = 'all';
 let searchQuery = '';
@@ -350,8 +362,12 @@ const BATCH_SIZE = 15;
 
 // === Data Loading ===
 async function loadData() {
-  const resp = await fetch('data/passages.json');
-  DATA = await resp.json();
+  const [passResp, spriteResp] = await Promise.all([
+    fetch('data/passages.json'),
+    fetch('data/sprite_map.json').catch(() => null),
+  ]);
+  DATA = await passResp.json();
+  if (spriteResp && spriteResp.ok) SPRITES = await spriteResp.json();
   // Init state values from key_variables
   DATA.key_variables.forEach(v => {
     stateValues[v.id] = v.default;
@@ -497,6 +513,18 @@ function groupByScene(passages) {
   return Array.from(groups.values());
 }
 
+function getCharPortrait(charName) {
+  if (!SPRITES) return '';
+  const key = charName.toLowerCase();
+  if (SPRITES.portraits[key]) return SPRITES.portraits[key];
+  return '';
+}
+
+function getCharImages(charName) {
+  if (!SPRITES || !SPRITES.characters[charName]) return [];
+  return SPRITES.characters[charName];
+}
+
 function groupByCharacter(passages) {
   const groups = new Map();
   // Passages with characters
@@ -542,12 +570,20 @@ function renderSceneBatch(scenes, startIdx) {
     const headerLabel = currentView === 'character'
       ? scene.es_name
       : `[${String(scene.es_idx).padStart(3,'0')}] ${scene.es_name}`;
+    // Character portrait
+    const portrait = scene.characters.length > 0 ? getCharPortrait(scene.characters[0]) : '';
+    const portraitHtml = portrait
+      ? `<img src="${portrait}" class="scene-portrait" alt="${scene.characters[0]}" loading="lazy">`
+      : '';
     header.innerHTML = `
-      <h3>${headerLabel}</h3>
-      <div class="meta">
-        <span class="cat-tag">${scene.category}</span>
-        ${scene.characters.map(c => `<span class="char-tag">${c}</span>`).join('')}
-        — ${scene.passages.length} 段 · <b>${matchCount}</b> 段匹配當前狀態
+      ${portraitHtml}
+      <div class="scene-header-text">
+        <h3>${headerLabel}</h3>
+        <div class="meta">
+          <span class="cat-tag">${scene.category}</span>
+          ${scene.characters.map(c => `<span class="char-tag">${c}</span>`).join('')}
+          — ${scene.passages.length} 段 · <b>${matchCount}</b> 段匹配當前狀態
+        </div>
       </div>
     `;
 
