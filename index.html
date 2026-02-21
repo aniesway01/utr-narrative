@@ -372,11 +372,73 @@ input[type="range"] {
 }
 .show-all-toggle:hover { text-decoration: underline; }
 
+/* Passage sprite images */
+.passage-with-img {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.passage-img {
+  flex-shrink: 0;
+  width: 120px;
+  height: auto;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.passage-img:hover {
+  transform: scale(1.05);
+}
+.passage-text-col {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Lightbox */
+.lightbox-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+}
+.lightbox-overlay.active { display: flex; }
+.lightbox-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.5);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .passage-with-img {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .passage-img {
+    width: 100%;
+    max-width: 200px;
+  }
+  .passage .text { font-size: 15px; line-height: 1.9; }
+  .toolbar { padding: 6px 10px; gap: 6px; }
+  .search-box { width: 100%; }
+  .view-toggle { margin-left: 0; width: 100%; justify-content: center; }
+  .chapter-header h2 { font-size: 17px; }
+  .sub-group-header h4 { font-size: 13px; }
+  .sidebar { padding: 10px; }
+  .sidebar h2 { font-size: 12px; }
+}
 </style>
 </head>
 <body>
@@ -429,6 +491,11 @@ input[type="range"] {
   </div>
 </div>
 
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightbox">
+  <img src="" alt="放大圖片" id="lightboxImg">
+</div>
+
 <script>
 // === Global State ===
 let DATA = null;
@@ -442,6 +509,16 @@ let showEnglish = false;
 let currentView = 'narrative';
 let renderedScenes = 0;
 const BATCH_SIZE = 15;
+
+// === Lightbox ===
+function openLightbox(src) {
+  const overlay = document.getElementById('lightbox');
+  document.getElementById('lightboxImg').src = src;
+  overlay.classList.add('active');
+}
+document.getElementById('lightbox').addEventListener('click', function() {
+  this.classList.remove('active');
+});
 
 // === Data Loading ===
 async function loadData() {
@@ -853,10 +930,24 @@ function renderQuestPassages(container, passages) {
       ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
       : '';
 
+    const spriteImg = (p.sprites && p.sprites.length > 0)
+      ? `<img class="passage-img" src="${p.sprites[0].image}"
+             alt="${p.sprites[0].obj} - ${p.sprites[0].anim}"
+             loading="lazy"
+             onclick="openLightbox(this.src)"
+             onerror="this.style.display='none'">`
+      : '';
+    const wrapClass = spriteImg ? 'passage-with-img' : '';
+
     html += `<div class="${cls}">
       <span class="pid">pid=${p.pid}</span>
-      <div class="text">${p.text_zh}</div>
-      ${enPreview}
+      <div class="${wrapClass}">
+        ${spriteImg}
+        <div class="passage-text-col">
+          <div class="text">${p.text_zh}</div>
+          ${enPreview}
+        </div>
+      </div>
     </div>`;
   });
   container.innerHTML = html;
@@ -935,11 +1026,25 @@ function renderPassages(container, passages) {
       ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
       : '';
 
+    const spriteImg = (p.sprites && p.sprites.length > 0)
+      ? `<img class="passage-img" src="${p.sprites[0].image}"
+             alt="${p.sprites[0].obj} - ${p.sprites[0].anim}"
+             loading="lazy"
+             onclick="openLightbox(this.src)"
+             onerror="this.style.display='none'">`
+      : '';
+    const wrapClass = spriteImg ? 'passage-with-img' : '';
+
     html += `<div class="${cls}">
       <span class="pid">pid=${p.pid}</span>
       ${condHtml}
-      <div class="text">${p.text_zh}</div>
-      ${enPreview}
+      <div class="${wrapClass}">
+        ${spriteImg}
+        <div class="passage-text-col">
+          <div class="text">${p.text_zh}</div>
+          ${enPreview}
+        </div>
+      </div>
     </div>`;
   });
   container.innerHTML = html;
