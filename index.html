@@ -581,8 +581,7 @@ function getFilteredPassages() {
     passages = passages.filter(p =>
       (p.text_zh || '').toLowerCase().includes(q) ||
       (p.es_name || '').toLowerCase().includes(q) ||
-      (p.chapter_name || '').toLowerCase().includes(q) ||
-      (p.sub_group || '').toLowerCase().includes(q) ||
+      (p.branch_label || '').toLowerCase().includes(q) ||
       p.characters.some(c => c.toLowerCase().includes(q))
     );
   }
@@ -639,32 +638,55 @@ function groupByCharacter(passages) {
 }
 
 function groupByNarrative(passages) {
-  // Build: chapter → sub_group → passages
-  const chapters = new Map();
+  // Build: branch_type → es_idx (quest) → passages
+  const sections = new Map();
   passages.forEach(p => {
-    const ch = p.chapter || 1;
-    if (!chapters.has(ch)) chapters.set(ch, new Map());
-    const subGroups = chapters.get(ch);
-    const sg = p.sub_group || 'Other';
-    if (!subGroups.has(sg)) subGroups.set(sg, []);
-    subGroups.get(sg).push(p);
+    const bt = p.branch_type || 'Other';
+    if (!sections.has(bt)) sections.set(bt, new Map());
+    const quests = sections.get(bt);
+    const esKey = p.es_idx != null ? p.es_idx : 'none';
+    if (!quests.has(esKey)) {
+      quests.set(esKey, {
+        es_idx: p.es_idx,
+        es_name: p.es_name || '(independent)',
+        characters: [],
+        passages: [],
+      });
+    }
+    const quest = quests.get(esKey);
+    quest.passages.push(p);
+    (p.characters || []).forEach(ch => {
+      if (!quest.characters.includes(ch)) quest.characters.push(ch);
+    });
   });
 
-  // Convert to array structure
+  // Convert to ordered array using branch_types metadata
+  const btMeta = DATA.branch_types || [];
+  const btOrder = btMeta.map(b => b.id);
+
   const result = [];
-  const chapterMeta = DATA.chapters || [];
-  for (const [chId, subGroups] of [...chapters.entries()].sort((a, b) => a[0] - b[0])) {
-    const meta = chapterMeta.find(c => c.id === chId) || { name: `Ch.${chId}`, desc: '' };
-    const subs = [];
-    for (const [sgName, sgPassages] of subGroups.entries()) {
-      subs.push({ name: sgName, passages: sgPassages });
+  // First add in defined order
+  btOrder.forEach(bt => {
+    if (sections.has(bt)) {
+      const meta = btMeta.find(b => b.id === bt) || { label: bt };
+      const quests = Array.from(sections.get(bt).values());
+      result.push({
+        id: bt,
+        label: meta.label,
+        quest_count: meta.quest_count || quests.length,
+        quests: quests,
+      });
+      sections.delete(bt);
     }
+  });
+  // Then any remaining
+  for (const [bt, questMap] of sections.entries()) {
+    const quests = Array.from(questMap.values());
     result.push({
-      id: chId,
-      name: meta.name,
-      desc: meta.desc,
-      passage_count: meta.passage_count || 0,
-      sub_groups: subs,
+      id: bt,
+      label: bt,
+      quest_count: quests.length,
+      quests: quests,
     });
   }
   return result;
@@ -700,91 +722,98 @@ function condKey(conditions) {
 function renderNarrative(passages) {
   const content = document.getElementById('content');
   content.innerHTML = '';
-  const chapters = groupByNarrative(passages);
+  const sections = groupByNarrative(passages);
 
   let totalPassages = 0;
   let totalMatched = 0;
 
-  chapters.forEach(chapter => {
-    const allChPassages = chapter.sub_groups.reduce((a, sg) => a.concat(sg.passages), []);
-    const matchCount = allChPassages.filter(p => evalPassageConditions(p)).length;
-    totalPassages += allChPassages.length;
+  sections.forEach(section => {
+    const allPassages = section.quests.reduce((a, q) => a.concat(q.passages), []);
+    const matchCount = allPassages.filter(p => evalPassageConditions(p)).length;
+    totalPassages += allPassages.length;
     totalMatched += matchCount;
 
-    // Chapter header
-    const chHeader = document.createElement('div');
-    chHeader.className = 'chapter-header';
-    chHeader.innerHTML = `
-      <h2>Ch.${chapter.id} ${chapter.name}</h2>
-      <div class="chapter-desc">${chapter.desc}</div>
-      <div class="chapter-stats">${allChPassages.length} 段 · <b>${matchCount}</b> 段匹配</div>
+    // Section header (branch type)
+    const secHeader = document.createElement('div');
+    secHeader.className = 'chapter-header';
+    // Pick portrait from first character if this is a character branch
+    const charName = section.id.startsWith('char_') ? section.id.slice(5) : '';
+    const portrait = charName ? getCharPortrait(charName) : '';
+    const portraitHtml = portrait
+      ? `<img src="${portrait}" style="width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);float:right;margin-left:8px" alt="${charName}" loading="lazy">`
+      : '';
+    secHeader.innerHTML = `
+      ${portraitHtml}
+      <h2>${section.label}</h2>
+      <div class="chapter-stats">${section.quests.length} 支線 · ${allPassages.length} 段 · <b>${matchCount}</b> 匹配</div>
     `;
 
-    const chBody = document.createElement('div');
-    chBody.className = 'chapter-body';
-    chBody.dataset.chapterId = chapter.id;
+    const secBody = document.createElement('div');
+    secBody.className = 'chapter-body';
+    secBody.dataset.sectionId = section.id;
 
-    chHeader.addEventListener('click', () => {
-      const isOpen = chBody.classList.contains('open');
+    secHeader.addEventListener('click', () => {
+      const isOpen = secBody.classList.contains('open');
       if (isOpen) {
-        chBody.classList.remove('open');
+        secBody.classList.remove('open');
       } else {
-        chBody.classList.add('open');
-        if (!chBody.dataset.rendered) {
-          renderChapterBody(chBody, chapter.sub_groups);
-          chBody.dataset.rendered = '1';
+        secBody.classList.add('open');
+        if (!secBody.dataset.rendered) {
+          renderSectionQuests(secBody, section.quests);
+          secBody.dataset.rendered = '1';
         }
       }
     });
 
-    content.appendChild(chHeader);
-    content.appendChild(chBody);
+    content.appendChild(secHeader);
+    content.appendChild(secBody);
   });
 
   document.getElementById('stats').innerHTML =
-    `<b>${chapters.length}</b> 章節 · <b>${totalPassages}</b> 段落 · <b>${totalMatched}</b> 匹配`;
+    `<b>${sections.length}</b> 分區 · <b>${totalPassages}</b> 段落 · <b>${totalMatched}</b> 匹配`;
 }
 
-function renderChapterBody(container, subGroups) {
-  subGroups.forEach(sg => {
-    const matchCount = sg.passages.filter(p => evalPassageConditions(p)).length;
+function renderSectionQuests(container, quests) {
+  quests.forEach(quest => {
+    const matchCount = quest.passages.filter(p => evalPassageConditions(p)).length;
 
-    // Sub-group header
-    const sgHeader = document.createElement('div');
-    sgHeader.className = 'sub-group-header';
-    const portrait = getCharPortrait(sg.name);
+    const qHeader = document.createElement('div');
+    qHeader.className = 'sub-group-header';
+    const portrait = quest.characters.length > 0 ? getCharPortrait(quest.characters[0]) : '';
     const portraitHtml = portrait
-      ? `<img src="${portrait}" class="scene-portrait" alt="${sg.name}" loading="lazy">`
+      ? `<img src="${portrait}" class="scene-portrait" alt="${quest.characters[0]}" loading="lazy">`
       : '';
-    sgHeader.innerHTML = `
+    const esLabel = quest.es_idx != null
+      ? `[${String(quest.es_idx).padStart(3,'0')}] ${quest.es_name}`
+      : quest.es_name;
+    qHeader.innerHTML = `
       ${portraitHtml}
-      <h4>${sg.name}</h4>
-      <div class="meta">${sg.passages.length} 段 · <b>${matchCount}</b> 匹配</div>
+      <h4>${esLabel}</h4>
+      <div class="meta">${quest.passages.length} 段 · <b>${matchCount}</b> 匹配</div>
     `;
 
-    const sgBody = document.createElement('div');
-    sgBody.className = 'sub-group-body';
+    const qBody = document.createElement('div');
+    qBody.className = 'sub-group-body';
 
-    sgHeader.addEventListener('click', () => {
-      const isOpen = sgBody.classList.contains('open');
+    qHeader.addEventListener('click', () => {
+      const isOpen = qBody.classList.contains('open');
       if (isOpen) {
-        sgBody.classList.remove('open');
+        qBody.classList.remove('open');
       } else {
-        sgBody.classList.add('open');
-        if (!sgBody.dataset.rendered) {
-          renderNarrativePassages(sgBody, sg.passages);
-          sgBody.dataset.rendered = '1';
+        qBody.classList.add('open');
+        if (!qBody.dataset.rendered) {
+          renderQuestPassages(qBody, quest.passages);
+          qBody.dataset.rendered = '1';
         }
       }
     });
 
-    container.appendChild(sgHeader);
-    container.appendChild(sgBody);
+    container.appendChild(qHeader);
+    container.appendChild(qBody);
   });
 }
 
-function renderNarrativePassages(container, passages) {
-  // Group by condition key for aggregation
+function renderQuestPassages(container, passages) {
   let html = '';
   let lastCondKey = null;
 
@@ -792,16 +821,15 @@ function renderNarrativePassages(container, passages) {
     const matches = evalPassageConditions(p);
     const ck = condKey(p.conditions);
 
-    // Show condition separator when condition group changes
+    // Condition separator when group changes
     if (ck !== lastCondKey) {
-      if (lastCondKey !== null) {
-        html += '<div class="cond-separator"></div>';
-      }
       if (ck) {
         html += `<div class="cond-separator">
           <div class="cond-group-label">${p.conditions.map(c =>
             `<span class="cond-tag">${condLabel(c)}</span>`).join(' ')}</div>
         </div>`;
+      } else if (lastCondKey !== null) {
+        html += '<div class="cond-separator"><div class="cond-group-label" style="color:var(--text2)">[無條件]</div></div>';
       }
       lastCondKey = ck;
     }
@@ -936,24 +964,7 @@ function resetAndRender() {
 
 function applyFilters() {
   if (currentView === 'narrative') {
-    // Re-render open sub-group bodies
-    document.querySelectorAll('.sub-group-body.open').forEach(div => {
-      div.dataset.rendered = '';
-    });
-    // Re-render open chapter bodies to update match counts
-    document.querySelectorAll('.chapter-body.open').forEach(chBody => {
-      const chId = Number(chBody.dataset.chapterId);
-      // Re-render sub-group contents
-      chBody.querySelectorAll('.sub-group-body.open').forEach(sgBody => {
-        // Find matching sub_group data by iterating passages
-        // Just mark as unrendered; re-open will re-render
-        sgBody.dataset.rendered = '';
-        sgBody.classList.remove('open');
-      });
-      chBody.dataset.rendered = '';
-      chBody.classList.remove('open');
-    });
-    // Full re-render for narrative to update all counts
+    // Full re-render to update all counts
     resetAndRender();
     return;
   }
