@@ -556,7 +556,8 @@ function buildCharFilter() {
   let html = '<button class="char-btn active" data-char="all">全部</button>';
   DATA.characters.forEach(ch => {
     const count = DATA.passages.filter(p => p.characters.includes(ch)).length;
-    html += `<button class="char-btn" data-char="${ch}">${ch} (${count})</button>`;
+    const display = CHAR_DISPLAY[ch] || ch;
+    html += `<button class="char-btn" data-char="${ch}">${display} (${count})</button>`;
   });
   container.innerHTML = html;
   container.querySelectorAll('.char-btn').forEach(btn => {
@@ -620,7 +621,7 @@ function groupByCharacter(passages) {
       if (!groups.has(ch)) {
         groups.set(ch, {
           es_idx: 0,
-          es_name: ch === '_untagged' ? '未標記角色' : ch,
+          es_name: ch === '_untagged' ? '未標記角色' : (CHAR_DISPLAY[ch] || ch),
           characters: ch === '_untagged' ? [] : [ch],
           category: 'Character',
           passages: [],
@@ -694,16 +695,27 @@ function groupByNarrative(passages) {
 
 // === Portrait helpers ===
 
+// Sprite alias: map new character keys to sprite_map keys
+const CHAR_SPRITE_ALIAS = {
+  'GreyMale': 'Grey', 'GreyFemale': 'Grey', 'Altrius': 'FemaleAgent',
+};
+// Display names for character filter buttons
+const CHAR_DISPLAY = {
+  'GreyMale': 'Grey♂', 'GreyFemale': 'Grey♀', 'Altrius': 'Altrius',
+};
+
 function getCharPortrait(charName) {
   if (!SPRITES) return '';
-  const key = charName.toLowerCase();
+  const mapped = CHAR_SPRITE_ALIAS[charName] || charName;
+  const key = mapped.toLowerCase();
   if (SPRITES.portraits && SPRITES.portraits[key]) return SPRITES.portraits[key];
   return '';
 }
 
 function getCharImages(charName) {
-  if (!SPRITES || !SPRITES.characters || !SPRITES.characters[charName]) return [];
-  return SPRITES.characters[charName];
+  if (!SPRITES || !SPRITES.characters) return [];
+  const mapped = CHAR_SPRITE_ALIAS[charName] || charName;
+  return SPRITES.characters[mapped] || [];
 }
 
 // === Condition label ===
