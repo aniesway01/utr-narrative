@@ -17,6 +17,7 @@
   --card: #1e1e3a;
   --tag-char: #4a9;
   --tag-cond: #a74;
+  --chapter-bg: linear-gradient(135deg, var(--accent2), var(--bg3));
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -153,7 +154,88 @@ input[type="range"] {
 }
 .view-btn.active { background: var(--accent2); color: #fff; border-color: var(--accent2); }
 
-/* Content cards */
+/* Chapter header (narrative view) */
+.chapter-header {
+  width: 100%;
+  background: var(--chapter-bg);
+  padding: 16px 20px;
+  margin: 24px 0 8px 0;
+  border-radius: 10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  cursor: pointer;
+  user-select: none;
+}
+.chapter-header:first-child { margin-top: 0; }
+.chapter-header h2 {
+  font-size: 20px;
+  color: #fff;
+  margin: 0 0 4px 0;
+  border: none;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.chapter-header .chapter-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 4px;
+}
+.chapter-header .chapter-stats {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+.chapter-header .chapter-stats b { color: var(--accent); }
+.chapter-body { display: none; }
+.chapter-body.open { display: block; }
+
+/* Sub-group header (narrative view) */
+.sub-group-header {
+  background: rgba(15, 52, 96, 0.6);
+  padding: 10px 14px;
+  margin: 12px 0 6px 0;
+  border-radius: 6px;
+  border-left: 3px solid var(--tag-char);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+}
+.sub-group-header h4 {
+  font-size: 14px;
+  color: var(--text);
+  flex: 1;
+}
+.sub-group-header .meta {
+  font-size: 11px;
+  color: var(--text2);
+}
+.sub-group-header .scene-portrait {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--tag-char);
+  flex-shrink: 0;
+}
+.sub-group-body { display: none; padding-left: 8px; }
+.sub-group-body.open { display: block; }
+
+/* Condition separator (narrative view) */
+.cond-separator {
+  border-top: 1px dashed var(--border);
+  margin: 8px 0 4px 0;
+  padding-top: 4px;
+}
+.cond-separator .cond-group-label {
+  font-size: 11px;
+  color: var(--tag-cond);
+  font-family: monospace;
+  margin-bottom: 4px;
+}
+
+/* Content cards (scene / character views) */
 .scene-header {
   background: var(--bg3);
   padding: 12px 16px;
@@ -333,7 +415,8 @@ input[type="range"] {
       <input type="text" class="search-box" id="searchBox" placeholder="搜尋文本 / 角色 / 場景...">
       <div class="stats" id="stats"></div>
       <div class="view-toggle">
-        <button class="view-btn active" data-view="scene" id="viewScene">按場景</button>
+        <button class="view-btn active" data-view="narrative" id="viewNarrative">按敘事</button>
+        <button class="view-btn" data-view="scene" id="viewScene">按場景</button>
         <button class="view-btn" data-view="character" id="viewChar">按角色</button>
       </div>
     </div>
@@ -356,7 +439,7 @@ let searchQuery = '';
 let filterMode = true;
 let showAllVariants = false;
 let showEnglish = false;
-let currentView = 'scene';
+let currentView = 'narrative';
 let renderedScenes = 0;
 const BATCH_SIZE = 15;
 
@@ -387,9 +470,6 @@ function evalCondition(cond) {
 
   // Handle string values
   if (typeof val === 'string' && !isNaN(val)) val = Number(val);
-  if (typeof current === 'string' && !isNaN(current)) {
-    // skip non-numeric comparisons
-  }
 
   const numCurrent = Number(current);
   const numVal = Number(val);
@@ -399,6 +479,19 @@ function evalCondition(cond) {
     if (op === '==' || op === '===') return String(current) === String(val);
     if (op === '!=') return String(current) !== String(val);
     return true;
+  }
+
+  // Progressive reading for CorruptionStage: slider means "show CS <= slider"
+  if (varName === 'CorruptionStage' && currentView === 'narrative') {
+    switch (op) {
+      case '==': return numCurrent >= numVal;  // CS==X visible when slider >= X
+      case '>=': return numCurrent >= numVal;  // CS>=X visible when slider >= X
+      case '>':  return numCurrent > numVal;
+      case '<':  return true;                  // lower stage content always visible
+      case '<=': return true;                  // lower stage content always visible
+      case '!=': return true;                  // show variant regardless
+      default: return true;
+    }
   }
 
   switch (op) {
@@ -423,8 +516,11 @@ function buildStateControls() {
   let html = '';
   DATA.key_variables.forEach(v => {
     if (v.type === 'range') {
+      const label = (v.id === 'CorruptionStage')
+        ? '閱讀進度（腐化等級）'
+        : v.label;
       html += `<div class="control-group">
-        <label>${v.label} <span class="val" id="val_${v.id}">${v.default}</span></label>
+        <label>${label} <span class="val" id="val_${v.id}">${v.default}</span></label>
         <input type="range" min="${v.min}" max="${v.max}" value="${v.default}"
                data-var="${v.id}" class="state-slider">
       </div>`;
@@ -485,11 +581,15 @@ function getFilteredPassages() {
     passages = passages.filter(p =>
       (p.text_zh || '').toLowerCase().includes(q) ||
       (p.es_name || '').toLowerCase().includes(q) ||
+      (p.chapter_name || '').toLowerCase().includes(q) ||
+      (p.sub_group || '').toLowerCase().includes(q) ||
       p.characters.some(c => c.toLowerCase().includes(q))
     );
   }
   return passages;
 }
+
+// === Grouping functions ===
 
 function groupByScene(passages) {
   const groups = new Map();
@@ -513,21 +613,8 @@ function groupByScene(passages) {
   return Array.from(groups.values());
 }
 
-function getCharPortrait(charName) {
-  if (!SPRITES) return '';
-  const key = charName.toLowerCase();
-  if (SPRITES.portraits[key]) return SPRITES.portraits[key];
-  return '';
-}
-
-function getCharImages(charName) {
-  if (!SPRITES || !SPRITES.characters[charName]) return [];
-  return SPRITES.characters[charName];
-}
-
 function groupByCharacter(passages) {
   const groups = new Map();
-  // Passages with characters
   passages.forEach(p => {
     const chars = p.characters.length > 0 ? p.characters : ['_untagged'];
     chars.forEach(ch => {
@@ -543,7 +630,6 @@ function groupByCharacter(passages) {
       groups.get(ch).passages.push(p);
     });
   });
-  // Sort: named characters first (alphabetical), _untagged last
   const sorted = Array.from(groups.values()).sort((a, b) => {
     if (a.es_name === '未標記角色') return 1;
     if (b.es_name === '未標記角色') return -1;
@@ -552,9 +638,191 @@ function groupByCharacter(passages) {
   return sorted;
 }
 
+function groupByNarrative(passages) {
+  // Build: chapter → sub_group → passages
+  const chapters = new Map();
+  passages.forEach(p => {
+    const ch = p.chapter || 1;
+    if (!chapters.has(ch)) chapters.set(ch, new Map());
+    const subGroups = chapters.get(ch);
+    const sg = p.sub_group || 'Other';
+    if (!subGroups.has(sg)) subGroups.set(sg, []);
+    subGroups.get(sg).push(p);
+  });
+
+  // Convert to array structure
+  const result = [];
+  const chapterMeta = DATA.chapters || [];
+  for (const [chId, subGroups] of [...chapters.entries()].sort((a, b) => a[0] - b[0])) {
+    const meta = chapterMeta.find(c => c.id === chId) || { name: `Ch.${chId}`, desc: '' };
+    const subs = [];
+    for (const [sgName, sgPassages] of subGroups.entries()) {
+      subs.push({ name: sgName, passages: sgPassages });
+    }
+    result.push({
+      id: chId,
+      name: meta.name,
+      desc: meta.desc,
+      passage_count: meta.passage_count || 0,
+      sub_groups: subs,
+    });
+  }
+  return result;
+}
+
+// === Portrait helpers ===
+
+function getCharPortrait(charName) {
+  if (!SPRITES) return '';
+  const key = charName.toLowerCase();
+  if (SPRITES.portraits && SPRITES.portraits[key]) return SPRITES.portraits[key];
+  return '';
+}
+
+function getCharImages(charName) {
+  if (!SPRITES || !SPRITES.characters || !SPRITES.characters[charName]) return [];
+  return SPRITES.characters[charName];
+}
+
+// === Condition label ===
+
 function condLabel(cond) {
   return `${cond.var}${cond.op}${cond.val}`;
 }
+
+function condKey(conditions) {
+  if (!conditions || conditions.length === 0) return '';
+  return conditions.map(c => condLabel(c)).sort().join('|');
+}
+
+// === Narrative view rendering ===
+
+function renderNarrative(passages) {
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+  const chapters = groupByNarrative(passages);
+
+  let totalPassages = 0;
+  let totalMatched = 0;
+
+  chapters.forEach(chapter => {
+    const allChPassages = chapter.sub_groups.reduce((a, sg) => a.concat(sg.passages), []);
+    const matchCount = allChPassages.filter(p => evalPassageConditions(p)).length;
+    totalPassages += allChPassages.length;
+    totalMatched += matchCount;
+
+    // Chapter header
+    const chHeader = document.createElement('div');
+    chHeader.className = 'chapter-header';
+    chHeader.innerHTML = `
+      <h2>Ch.${chapter.id} ${chapter.name}</h2>
+      <div class="chapter-desc">${chapter.desc}</div>
+      <div class="chapter-stats">${allChPassages.length} 段 · <b>${matchCount}</b> 段匹配</div>
+    `;
+
+    const chBody = document.createElement('div');
+    chBody.className = 'chapter-body';
+    chBody.dataset.chapterId = chapter.id;
+
+    chHeader.addEventListener('click', () => {
+      const isOpen = chBody.classList.contains('open');
+      if (isOpen) {
+        chBody.classList.remove('open');
+      } else {
+        chBody.classList.add('open');
+        if (!chBody.dataset.rendered) {
+          renderChapterBody(chBody, chapter.sub_groups);
+          chBody.dataset.rendered = '1';
+        }
+      }
+    });
+
+    content.appendChild(chHeader);
+    content.appendChild(chBody);
+  });
+
+  document.getElementById('stats').innerHTML =
+    `<b>${chapters.length}</b> 章節 · <b>${totalPassages}</b> 段落 · <b>${totalMatched}</b> 匹配`;
+}
+
+function renderChapterBody(container, subGroups) {
+  subGroups.forEach(sg => {
+    const matchCount = sg.passages.filter(p => evalPassageConditions(p)).length;
+
+    // Sub-group header
+    const sgHeader = document.createElement('div');
+    sgHeader.className = 'sub-group-header';
+    const portrait = getCharPortrait(sg.name);
+    const portraitHtml = portrait
+      ? `<img src="${portrait}" class="scene-portrait" alt="${sg.name}" loading="lazy">`
+      : '';
+    sgHeader.innerHTML = `
+      ${portraitHtml}
+      <h4>${sg.name}</h4>
+      <div class="meta">${sg.passages.length} 段 · <b>${matchCount}</b> 匹配</div>
+    `;
+
+    const sgBody = document.createElement('div');
+    sgBody.className = 'sub-group-body';
+
+    sgHeader.addEventListener('click', () => {
+      const isOpen = sgBody.classList.contains('open');
+      if (isOpen) {
+        sgBody.classList.remove('open');
+      } else {
+        sgBody.classList.add('open');
+        if (!sgBody.dataset.rendered) {
+          renderNarrativePassages(sgBody, sg.passages);
+          sgBody.dataset.rendered = '1';
+        }
+      }
+    });
+
+    container.appendChild(sgHeader);
+    container.appendChild(sgBody);
+  });
+}
+
+function renderNarrativePassages(container, passages) {
+  // Group by condition key for aggregation
+  let html = '';
+  let lastCondKey = null;
+
+  passages.forEach(p => {
+    const matches = evalPassageConditions(p);
+    const ck = condKey(p.conditions);
+
+    // Show condition separator when condition group changes
+    if (ck !== lastCondKey) {
+      if (lastCondKey !== null) {
+        html += '<div class="cond-separator"></div>';
+      }
+      if (ck) {
+        html += `<div class="cond-separator">
+          <div class="cond-group-label">${p.conditions.map(c =>
+            `<span class="cond-tag">${condLabel(c)}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      lastCondKey = ck;
+    }
+
+    const cls = matches ? 'passage match-state' :
+                (filterMode ? 'passage hidden-by-state' : 'passage');
+
+    const enPreview = showEnglish && p.text_en_preview
+      ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
+      : '';
+
+    html += `<div class="${cls}">
+      <span class="pid">pid=${p.pid}</span>
+      <div class="text">${p.text_zh}</div>
+      ${enPreview}
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+// === Scene/Character view rendering ===
 
 function renderSceneBatch(scenes, startIdx) {
   const content = document.getElementById('content');
@@ -570,7 +838,6 @@ function renderSceneBatch(scenes, startIdx) {
     const headerLabel = currentView === 'character'
       ? scene.es_name
       : `[${String(scene.es_idx).padStart(3,'0')}] ${scene.es_name}`;
-    // Character portrait
     const portrait = scene.characters.length > 0 ? getCharPortrait(scene.characters[0]) : '';
     const portraitHtml = portrait
       ? `<img src="${portrait}" class="scene-portrait" alt="${scene.characters[0]}" loading="lazy">`
@@ -638,12 +905,20 @@ function renderPassages(container, passages) {
   container.innerHTML = html;
 }
 
+// === Main render/filter logic ===
+
 function resetAndRender() {
   const content = document.getElementById('content');
   content.innerHTML = '';
   renderedScenes = 0;
 
   const passages = getFilteredPassages();
+
+  if (currentView === 'narrative') {
+    renderNarrative(passages);
+    return;
+  }
+
   const scenes = currentView === 'character' ? groupByCharacter(passages) : groupByScene(passages);
   renderSceneBatch(scenes, 0);
 
@@ -660,13 +935,35 @@ function resetAndRender() {
 }
 
 function applyFilters() {
-  // Re-evaluate all rendered passages
+  if (currentView === 'narrative') {
+    // Re-render open sub-group bodies
+    document.querySelectorAll('.sub-group-body.open').forEach(div => {
+      div.dataset.rendered = '';
+    });
+    // Re-render open chapter bodies to update match counts
+    document.querySelectorAll('.chapter-body.open').forEach(chBody => {
+      const chId = Number(chBody.dataset.chapterId);
+      // Re-render sub-group contents
+      chBody.querySelectorAll('.sub-group-body.open').forEach(sgBody => {
+        // Find matching sub_group data by iterating passages
+        // Just mark as unrendered; re-open will re-render
+        sgBody.dataset.rendered = '';
+        sgBody.classList.remove('open');
+      });
+      chBody.dataset.rendered = '';
+      chBody.classList.remove('open');
+    });
+    // Full re-render for narrative to update all counts
+    resetAndRender();
+    return;
+  }
+
+  // Scene/character view: re-evaluate rendered passages
   document.querySelectorAll('.scene-passages.open').forEach(div => {
     const sceneIdx = Number(div.dataset.sceneIdx);
     const scenes = document.getElementById('content')._scenes;
     if (scenes && scenes[sceneIdx]) {
       renderPassages(div, scenes[sceneIdx].passages);
-      // Update header match count
       const header = div.previousElementSibling;
       const matchCount = scenes[sceneIdx].passages.filter(p => evalPassageConditions(p)).length;
       const meta = header.querySelector('.meta');
@@ -685,6 +982,18 @@ function updateStats(scenes) {
     s + sc.passages.filter(p => evalPassageConditions(p)).length, 0);
   document.getElementById('stats').innerHTML =
     `<b>${scenes.length}</b> 場景 · <b>${total}</b> 段落 · <b>${matched}</b> 匹配`;
+}
+
+// === View switching ===
+
+function setActiveView(view) {
+  currentView = view;
+  document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(
+    view === 'narrative' ? 'viewNarrative' :
+    view === 'scene' ? 'viewScene' : 'viewChar'
+  ).classList.add('active');
+  resetAndRender();
 }
 
 // === Init ===
@@ -713,26 +1022,16 @@ function init() {
   });
   document.getElementById('showEnglish').addEventListener('change', (e) => {
     showEnglish = e.target.checked;
-    // Re-render open passages
-    document.querySelectorAll('.scene-passages.open').forEach(div => {
+    document.querySelectorAll('.scene-passages.open, .sub-group-body.open').forEach(div => {
       div.dataset.rendered = '';
     });
     applyFilters();
   });
 
   // View mode buttons
-  document.getElementById('viewScene').addEventListener('click', () => {
-    currentView = 'scene';
-    document.getElementById('viewScene').classList.add('active');
-    document.getElementById('viewChar').classList.remove('active');
-    resetAndRender();
-  });
-  document.getElementById('viewChar').addEventListener('click', () => {
-    currentView = 'character';
-    document.getElementById('viewChar').classList.add('active');
-    document.getElementById('viewScene').classList.remove('active');
-    resetAndRender();
-  });
+  document.getElementById('viewNarrative').addEventListener('click', () => setActiveView('narrative'));
+  document.getElementById('viewScene').addEventListener('click', () => setActiveView('scene'));
+  document.getElementById('viewChar').addEventListener('click', () => setActiveView('character'));
 
   resetAndRender();
 }
