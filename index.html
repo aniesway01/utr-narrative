@@ -395,6 +395,20 @@ input[type="range"] {
   min-width: 0;
 }
 
+/* Multi-character portraits row */
+.passage-portraits {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.passage-portraits img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  object-fit: cover;
+}
+
 /* Lightbox */
 .lightbox-overlay {
   display: none;
@@ -930,6 +944,16 @@ function renderQuestPassages(container, passages) {
       ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
       : '';
 
+    // 多角色頭像列
+    const charPortraits = (p.characters && p.characters.length > 1)
+      ? `<div class="passage-portraits">${
+          p.characters.map(c => {
+            const src = getCharPortrait(c);
+            return src ? `<img src="${src}" alt="${c}" title="${c}" loading="lazy">` : '';
+          }).filter(Boolean).join('')
+        }</div>`
+      : '';
+
     const spriteImg = (p.sprites && p.sprites.length > 0)
       ? `<img class="passage-img" src="${p.sprites[0].image}"
              alt="${p.sprites[0].obj} - ${p.sprites[0].anim}"
@@ -941,6 +965,7 @@ function renderQuestPassages(container, passages) {
 
     html += `<div class="${cls}">
       <span class="pid">pid=${p.pid}</span>
+      ${charPortraits}
       <div class="${wrapClass}">
         ${spriteImg}
         <div class="passage-text-col">
@@ -1026,6 +1051,16 @@ function renderPassages(container, passages) {
       ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
       : '';
 
+    // 多角色頭像列
+    const charPortraits = (p.characters && p.characters.length > 1)
+      ? `<div class="passage-portraits">${
+          p.characters.map(c => {
+            const src = getCharPortrait(c);
+            return src ? `<img src="${src}" alt="${c}" title="${c}" loading="lazy">` : '';
+          }).filter(Boolean).join('')
+        }</div>`
+      : '';
+
     const spriteImg = (p.sprites && p.sprites.length > 0)
       ? `<img class="passage-img" src="${p.sprites[0].image}"
              alt="${p.sprites[0].obj} - ${p.sprites[0].anim}"
@@ -1038,6 +1073,7 @@ function renderPassages(container, passages) {
     html += `<div class="${cls}">
       <span class="pid">pid=${p.pid}</span>
       ${condHtml}
+      ${charPortraits}
       <div class="${wrapClass}">
         ${spriteImg}
         <div class="passage-text-col">
