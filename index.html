@@ -72,25 +72,6 @@ body {
   padding-bottom: 4px;
 }
 .sidebar h2:first-child { margin-top: 0; }
-.control-group { margin-bottom: 8px; }
-.control-group label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  color: var(--text2);
-  margin-bottom: 2px;
-}
-.control-group label span.val {
-  color: var(--accent);
-  font-weight: bold;
-  font-size: 14px;
-}
-input[type="range"] {
-  width: 100%;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
 .toggle-row {
   display: flex;
   align-items: center;
@@ -305,12 +286,6 @@ input[type="range"] {
   float: right;
 }
 .passage .text { font-size: 14px; line-height: 1.8; }
-.passage.hidden-by-state {
-  opacity: 0.25;
-  border-left-color: transparent;
-}
-.passage.match-state { border-left-color: var(--tag-char); }
-
 /* Loading */
 .loading {
   text-align: center;
@@ -467,14 +442,7 @@ input[type="range"] {
       <button class="char-btn active" data-char="all">全部</button>
     </div>
 
-    <h2>玩家狀態</h2>
-    <div id="stateControls"></div>
-
     <h2>顯示模式</h2>
-    <div class="toggle-row">
-      <input type="checkbox" id="filterMode" checked>
-      <label for="filterMode">高亮匹配 / 隱藏不匹配</label>
-    </div>
     <div class="toggle-row">
       <input type="checkbox" id="showAllVariants">
       <label for="showAllVariants">展開所有變體</label>
@@ -514,10 +482,8 @@ input[type="range"] {
 // === Global State ===
 let DATA = null;
 let SPRITES = null;
-let stateValues = {};
 let activeChar = 'all';
 let searchQuery = '';
-let filterMode = true;
 let showAllVariants = false;
 let showEnglish = false;
 let currentView = 'narrative';
@@ -542,105 +508,10 @@ async function loadData() {
   ]);
   DATA = await passResp.json();
   if (spriteResp && spriteResp.ok) SPRITES = await spriteResp.json();
-  // Init state values from key_variables
-  DATA.key_variables.forEach(v => {
-    stateValues[v.id] = v.default;
-  });
   init();
 }
 
-// === Condition Evaluation ===
-function evalCondition(cond) {
-  const varName = cond.var;
-  const op = cond.op;
-  let val = cond.val;
-  const current = stateValues[varName];
-
-  if (current === undefined) return true; // unknown var = pass
-  if (val === null || val === undefined) return true;
-
-  // Handle string values
-  if (typeof val === 'string' && !isNaN(val)) val = Number(val);
-
-  const numCurrent = Number(current);
-  const numVal = Number(val);
-
-  if (isNaN(numCurrent) || isNaN(numVal)) {
-    // String comparison
-    if (op === '==' || op === '===') return String(current) === String(val);
-    if (op === '!=') return String(current) !== String(val);
-    return true;
-  }
-
-  // Progressive reading for CorruptionStage: slider means "show CS <= slider"
-  if (varName === 'CorruptionStage' && currentView === 'narrative') {
-    switch (op) {
-      case '==': return numCurrent >= numVal;  // CS==X visible when slider >= X
-      case '>=': return numCurrent >= numVal;  // CS>=X visible when slider >= X
-      case '>':  return numCurrent > numVal;
-      case '<':  return true;                  // lower stage content always visible
-      case '<=': return true;                  // lower stage content always visible
-      case '!=': return true;                  // show variant regardless
-      default: return true;
-    }
-  }
-
-  switch (op) {
-    case '==': return numCurrent === numVal;
-    case '!=': return numCurrent !== numVal;
-    case '<': return numCurrent < numVal;
-    case '<=': return numCurrent <= numVal;
-    case '>': return numCurrent > numVal;
-    case '>=': return numCurrent >= numVal;
-    default: return true;
-  }
-}
-
-function evalPassageConditions(passage) {
-  if (!passage.conditions || passage.conditions.length === 0) return true;
-  return passage.conditions.every(c => evalCondition(c));
-}
-
 // === Rendering ===
-function buildStateControls() {
-  const container = document.getElementById('stateControls');
-  let html = '';
-  DATA.key_variables.forEach(v => {
-    if (v.type === 'range') {
-      const label = (v.id === 'CorruptionStage')
-        ? '閱讀進度（腐化等級）'
-        : v.label;
-      html += `<div class="control-group">
-        <label>${label} <span class="val" id="val_${v.id}">${v.default}</span></label>
-        <input type="range" min="${v.min}" max="${v.max}" value="${v.default}"
-               data-var="${v.id}" class="state-slider">
-      </div>`;
-    } else if (v.type === 'toggle') {
-      html += `<div class="toggle-row">
-        <input type="checkbox" data-var="${v.id}" class="state-toggle" id="tog_${v.id}">
-        <label for="tog_${v.id}">${v.label}</label>
-      </div>`;
-    }
-  });
-  container.innerHTML = html;
-
-  // Bind events
-  container.querySelectorAll('.state-slider').forEach(el => {
-    el.addEventListener('input', (e) => {
-      const varName = e.target.dataset.var;
-      const val = Number(e.target.value);
-      stateValues[varName] = val;
-      document.getElementById(`val_${varName}`).textContent = val;
-      applyFilters();
-    });
-  });
-  container.querySelectorAll('.state-toggle').forEach(el => {
-    el.addEventListener('change', (e) => {
-      stateValues[e.target.dataset.var] = e.target.checked ? 1 : 0;
-      applyFilters();
-    });
-  });
-}
 
 function buildCharFilter() {
   const container = document.getElementById('charFilter');
@@ -828,18 +699,14 @@ function renderNarrative(passages) {
   const sections = groupByNarrative(passages);
 
   let totalPassages = 0;
-  let totalMatched = 0;
 
   sections.forEach(section => {
     const allPassages = section.quests.reduce((a, q) => a.concat(q.passages), []);
-    const matchCount = allPassages.filter(p => evalPassageConditions(p)).length;
     totalPassages += allPassages.length;
-    totalMatched += matchCount;
 
     // Section header (branch type)
     const secHeader = document.createElement('div');
     secHeader.className = 'chapter-header';
-    // Pick portrait from first character if this is a character branch
     const charName = section.id.startsWith('char_') ? section.id.slice(5) : '';
     const portrait = charName ? getCharPortrait(charName) : '';
     const portraitHtml = portrait
@@ -848,7 +715,7 @@ function renderNarrative(passages) {
     secHeader.innerHTML = `
       ${portraitHtml}
       <h2>${section.label}</h2>
-      <div class="chapter-stats">${section.quests.length} 支線 · ${allPassages.length} 段 · <b>${matchCount}</b> 匹配</div>
+      <div class="chapter-stats">${section.quests.length} 支線 · ${allPassages.length} 段</div>
     `;
 
     const secBody = document.createElement('div');
@@ -873,13 +740,11 @@ function renderNarrative(passages) {
   });
 
   document.getElementById('stats').innerHTML =
-    `<b>${sections.length}</b> 分區 · <b>${totalPassages}</b> 段落 · <b>${totalMatched}</b> 匹配`;
+    `<b>${sections.length}</b> 分區 · <b>${totalPassages}</b> 段落`;
 }
 
 function renderSectionQuests(container, quests) {
   quests.forEach(quest => {
-    const matchCount = quest.passages.filter(p => evalPassageConditions(p)).length;
-
     const qHeader = document.createElement('div');
     qHeader.className = 'sub-group-header';
     const portrait = quest.characters.length > 0 ? getCharPortrait(quest.characters[0]) : '';
@@ -892,7 +757,7 @@ function renderSectionQuests(container, quests) {
     qHeader.innerHTML = `
       ${portraitHtml}
       <h4>${esLabel}</h4>
-      <div class="meta">${quest.passages.length} 段 · <b>${matchCount}</b> 匹配</div>
+      <div class="meta">${quest.passages.length} 段</div>
     `;
 
     const qBody = document.createElement('div');
@@ -921,7 +786,6 @@ function renderQuestPassages(container, passages) {
   let lastCondKey = null;
 
   passages.forEach(p => {
-    const matches = evalPassageConditions(p);
     const ck = condKey(p.conditions);
 
     // Condition separator when group changes
@@ -936,9 +800,6 @@ function renderQuestPassages(container, passages) {
       }
       lastCondKey = ck;
     }
-
-    const cls = matches ? 'passage match-state' :
-                (filterMode ? 'passage hidden-by-state' : 'passage');
 
     const enPreview = showEnglish && p.text_en_preview
       ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
@@ -963,7 +824,7 @@ function renderQuestPassages(container, passages) {
       : '';
     const wrapClass = spriteImg ? 'passage-with-img' : '';
 
-    html += `<div class="${cls}">
+    html += `<div class="passage">
       <span class="pid">pid=${p.pid}</span>
       ${charPortraits}
       <div class="${wrapClass}">
@@ -986,7 +847,6 @@ function renderSceneBatch(scenes, startIdx) {
 
   for (let i = startIdx; i < end; i++) {
     const scene = scenes[i];
-    const matchCount = scene.passages.filter(p => evalPassageConditions(p)).length;
 
     // Scene header
     const header = document.createElement('div');
@@ -1005,7 +865,7 @@ function renderSceneBatch(scenes, startIdx) {
         <div class="meta">
           <span class="cat-tag">${scene.category}</span>
           ${scene.characters.map(c => `<span class="char-tag">${c}</span>`).join('')}
-          — ${scene.passages.length} 段 · <b>${matchCount}</b> 段匹配當前狀態
+          — ${scene.passages.length} 段
         </div>
       </div>
     `;
@@ -1038,14 +898,10 @@ function renderSceneBatch(scenes, startIdx) {
 function renderPassages(container, passages) {
   let html = '';
   passages.forEach(p => {
-    const matches = evalPassageConditions(p);
     const condHtml = p.conditions.length > 0
       ? `<div class="cond-tags">${p.conditions.map(c =>
           `<span class="cond-tag">${condLabel(c)}</span>`).join('')}</div>`
       : '';
-
-    const cls = matches ? 'passage match-state' :
-                (filterMode ? 'passage hidden-by-state' : 'passage');
 
     const enPreview = showEnglish && p.text_en_preview
       ? `<div style="font-size:11px;color:var(--text2);margin-top:6px;font-style:italic">${p.text_en_preview}...</div>`
@@ -1070,7 +926,7 @@ function renderPassages(container, passages) {
       : '';
     const wrapClass = spriteImg ? 'passage-with-img' : '';
 
-    html += `<div class="${cls}">
+    html += `<div class="passage">
       <span class="pid">pid=${p.pid}</span>
       ${condHtml}
       ${charPortraits}
@@ -1116,36 +972,13 @@ function resetAndRender() {
 }
 
 function applyFilters() {
-  if (currentView === 'narrative') {
-    // Full re-render to update all counts
-    resetAndRender();
-    return;
-  }
-
-  // Scene/character view: re-evaluate rendered passages
-  document.querySelectorAll('.scene-passages.open').forEach(div => {
-    const sceneIdx = Number(div.dataset.sceneIdx);
-    const scenes = document.getElementById('content')._scenes;
-    if (scenes && scenes[sceneIdx]) {
-      renderPassages(div, scenes[sceneIdx].passages);
-      const header = div.previousElementSibling;
-      const matchCount = scenes[sceneIdx].passages.filter(p => evalPassageConditions(p)).length;
-      const meta = header.querySelector('.meta');
-      const parts = meta.innerHTML.split('·');
-      if (parts.length > 1) {
-        parts[1] = ` <b>${matchCount}</b> 段匹配當前狀態`;
-        meta.innerHTML = parts.join('·');
-      }
-    }
-  });
+  resetAndRender();
 }
 
 function updateStats(scenes) {
   const total = scenes.reduce((s, sc) => s + sc.passages.length, 0);
-  const matched = scenes.reduce((s, sc) =>
-    s + sc.passages.filter(p => evalPassageConditions(p)).length, 0);
   document.getElementById('stats').innerHTML =
-    `<b>${scenes.length}</b> 場景 · <b>${total}</b> 段落 · <b>${matched}</b> 匹配`;
+    `<b>${scenes.length}</b> 場景 · <b>${total}</b> 段落`;
 }
 
 // === View switching ===
@@ -1162,7 +995,6 @@ function setActiveView(view) {
 
 // === Init ===
 function init() {
-  buildStateControls();
   buildCharFilter();
 
   // Search
@@ -1175,11 +1007,6 @@ function init() {
     }, 300);
   });
 
-  // Filter mode toggle
-  document.getElementById('filterMode').addEventListener('change', (e) => {
-    filterMode = e.target.checked;
-    applyFilters();
-  });
   document.getElementById('showAllVariants').addEventListener('change', (e) => {
     showAllVariants = e.target.checked;
     applyFilters();
