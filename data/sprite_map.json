@@ -357,7 +357,19 @@
     "fae": "images/portraits/fae.webp",
     "grey": "images/portraits/grey.webp",
     "mercer": "images/portraits/mercer.webp",
-    "veronica": "images/portraits/veronica.webp"
+    "veronica": "images/portraits/veronica.webp",
+    "anastasia": "images/portraits/anastasia.webp",
+    "medea": "images/portraits/medea.webp",
+    "uru": "images/portraits/uru.webp",
+    "shadowspawn": "images/portraits/shadowspawn.webp",
+    "manfred": "images/portraits/manfred.webp",
+    "thomas": "images/portraits/thomas.webp",
+    "isabella": "images/portraits/isabella.webp",
+    "madeline": "images/portraits/madeline.webp",
+    "evilmage": "images/portraits/evilmage.webp",
+    "tutorialboss": "images/portraits/tutorialboss.webp",
+    "sailor": "images/portraits/sailor.webp",
+    "greyfemale": "images/portraits/greyfemale.webp"
   },
   "scenes": {
     "introdisplay": "images/scenes/introdisplay.webp",
