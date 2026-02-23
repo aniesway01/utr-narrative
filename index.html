@@ -872,9 +872,12 @@ function renderPassageList(container, passages) {
         }</div>`
       : '';
 
-    const spriteImg = (p.sprites && p.sprites.length > 0)
-      ? `<img class="passage-img" src="${p.sprites[0].image}"
-             alt="${p.sprites[0].anim || ''}"
+    const bestSprite = (p.sprites && p.sprites.length > 0)
+      ? (p.sprites.find(s => s.category === 'NPC' || s.category === 'Player') || p.sprites[0])
+      : null;
+    const spriteImg = bestSprite
+      ? `<img class="passage-img" src="${bestSprite.image}"
+             alt="${bestSprite.anim || ''}"
              loading="lazy"
              onclick="openLightbox(this.src)"
              onerror="this.style.display='none'">`
