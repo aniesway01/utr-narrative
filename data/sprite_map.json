@@ -369,7 +369,9 @@
     "evilmage": "images/portraits/evilmage.webp",
     "tutorialboss": "images/portraits/tutorialboss.webp",
     "sailor": "images/portraits/sailor.webp",
-    "greyfemale": "images/portraits/greyfemale.webp"
+    "greyfemale": "images/portraits/greyfemale.webp",
+    "ophelia": "images/portraits/ophelia.webp",
+    "winifred": "images/portraits/winifred.webp"
   },
   "scenes": {
     "introdisplay": "images/scenes/introdisplay.webp",

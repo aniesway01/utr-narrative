@@ -872,12 +872,16 @@ function renderPassageList(container, passages) {
         }</div>`
       : '';
 
-    const bestSprite = (p.sprites && p.sprites.length > 0)
-      ? (p.sprites.find(s => s.category === 'NPC' || s.category === 'Player') || p.sprites[0])
-      : null;
-    const spriteImg = bestSprite
-      ? `<img class="passage-img" src="${bestSprite.image}"
-             alt="${bestSprite.anim || ''}"
+    const bestSprite = (p.sprites && p.sprites.length > 0) ? p.sprites[0] : null;
+    // Scene-only fallback: use character portrait if available
+    let spriteImgSrc = bestSprite ? bestSprite.image : '';
+    if (bestSprite && bestSprite.category === 'Scene' && p.characters && p.characters.length > 0) {
+      const portraitSrc = getCharPortrait(p.characters[0]);
+      if (portraitSrc) spriteImgSrc = portraitSrc;
+    }
+    const spriteImg = spriteImgSrc
+      ? `<img class="passage-img" src="${spriteImgSrc}"
+             alt="${bestSprite ? bestSprite.anim || '' : ''}"
              loading="lazy"
              onclick="openLightbox(this.src)"
              onerror="this.style.display='none'">`
