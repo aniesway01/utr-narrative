@@ -409,8 +409,8 @@ document.getElementById('lightbox').addEventListener('click', function() {
 // === Data Loading ===
 async function loadData() {
   const [passResp, spriteResp] = await Promise.all([
-    fetch('data/passages.json?v=2'),
-    fetch('data/sprite_map.json?v=2').catch(() => null),
+    fetch(`data/passages.json?v=${Date.now()}`),
+    fetch(`data/sprite_map.json?v=${Date.now()}`).catch(() => null),
   ]);
   DATA = await passResp.json();
   if (spriteResp && spriteResp.ok) SPRITES = await spriteResp.json();
